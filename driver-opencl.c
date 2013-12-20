@@ -219,6 +219,10 @@ static enum cl_kernels select_kernel(char *arg)
 	if (!strcmp(arg, "scrypt"))
 		return KL_SCRYPT;
 #endif
+#ifdef USE_BLAKE256
+	if (!strcmp(arg, "blake256"))
+		return KL_BLAKE256;
+#endif
 	return KL_NONE;
 }
 
@@ -230,6 +234,8 @@ char *set_kernel(char *arg)
 
 	if (opt_scrypt)
 		return "Cannot use sha256 kernel with scrypt";
+	if (opt_blake256)
+		return "Cannot use sha256 kernel with blake256";
 	nextptr = strtok(arg, ",");
 	if (nextptr == NULL)
 		return "Invalid parameters for set kernel";
@@ -1096,6 +1102,31 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 }
 #endif
 
+#ifdef USE_BLAKE256
+static cl_int queue_blake256_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+	cl_kernel *kernel = &clState->kernel;
+	unsigned int num = 0;
+	cl_int status = 0;
+        
+	CL_SET_ARG(clState->outputBuffer);
+	CL_SET_BLKARG(ctx_a);
+	CL_SET_BLKARG(ctx_b);
+	CL_SET_BLKARG(ctx_c);
+	CL_SET_BLKARG(ctx_d);
+	CL_SET_BLKARG(ctx_e);
+	CL_SET_BLKARG(ctx_f);
+	CL_SET_BLKARG(ctx_g);
+	CL_SET_BLKARG(ctx_h);
+
+	CL_SET_BLKARG(cty_a);
+	CL_SET_BLKARG(cty_b);
+	CL_SET_BLKARG(cty_c);
+
+	return status;
+}
+#endif
+
 static void set_threads_hashes(unsigned int vectors,int64_t *hashes, size_t *globalThreads,
 			       unsigned int minthreads, __maybe_unused int *intensity)
 {
@@ -1257,6 +1288,8 @@ static void opencl_detect()
 
 	if (opt_scrypt)
 		opencl_drv.max_diff = 65536;
+	//else if (opt_blake256)
+	//	opencl_drv.max_diff = 256; PICHULA
 
 	for (i = 0; i < nDevs; ++i) {
 		struct cgpu_info *cgpu;
@@ -1382,6 +1415,11 @@ static bool opencl_thread_prepare(struct thr_info *thr)
 				cgpu->kname = "scrypt";
 				break;
 #endif
+#ifdef USE_BLAKE256
+			case KL_BLAKE256:
+				cgpu->kname = "blake256";
+				break;
+#endif
 			case KL_POCLBM:
 				cgpu->kname = "poclbm";
 				break;
@@ -1429,6 +1467,11 @@ static bool opencl_thread_init(struct thr_info *thr)
 			thrdata->queue_kernel_parameters = &queue_scrypt_kernel;
 			break;
 #endif
+#ifdef USE_BLAKE256
+		case KL_BLAKE256:
+			thrdata->queue_kernel_parameters = &queue_blake256_kernel;
+			break;
+#endif
 		default:
 		case KL_DIABLO:
 			thrdata->queue_kernel_parameters = &queue_diablo_kernel;
@@ -1464,6 +1507,12 @@ static bool opencl_prepare_work(struct thr_info __maybe_unused *thr, struct work
 	if (opt_scrypt)
 		work->blk.work = work;
 	else
+#endif
+#ifdef USE_BLAKE256
+	if (opt_blake256) {
+		//work->blk.work = work; PICHULA
+		precalc_hash_blake256(&work->blk, 0, (uint32_t *)(work->data));
+	} else
 #endif
 		precalc_hash(&work->blk, (uint32_t *)(work->midstate), (uint32_t *)(work->data + 64));
 	return true;

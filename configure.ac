@@ -19,6 +19,12 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([cgminer.c])
 AC_CONFIG_HEADERS([config.h])
 
+AH_BOTTOM([
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+])
+
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_USE_SYSTEM_EXTENSIONS
@@ -184,6 +190,7 @@ AC_ARG_ENABLE([adl],
 	)
 
 scrypt="no"
+blake256="no"
 
 if test "$found_opencl" = 1; then
 	if test "x$adl" != xno; then
@@ -207,11 +214,20 @@ if test "$found_opencl" = 1; then
 	if test "x$scrypt" = xyes; then
 		AC_DEFINE([USE_SCRYPT], [1], [Defined to 1 if scrypt support is wanted])
 	fi
+
+	AC_ARG_ENABLE([blake256],
+		[AC_HELP_STRING([--enable-blake256],[Compile support for blake256 Blakecoin mining (default disabled)])],
+		[blake256=$enableval]
+		)
+	if test "x$blake256" = xyes; then
+		AC_DEFINE([USE_BLAKE256], [1], [Defined to 1 if blake256 support is wanted])
+	fi
 else
 	DLOPEN_FLAGS=""
 fi
 
 AM_CONDITIONAL([HAS_SCRYPT], [test x$scrypt = xyes])
+AM_CONDITIONAL([HAS_BLAKE256], [test x$blake256 = xyes])
 
 bflsc="no"
 
@@ -428,6 +444,7 @@ AC_DEFINE_UNQUOTED([POCLBM_KERNNAME], ["poclbm130302"], [Filename for poclbm ker
 AC_DEFINE_UNQUOTED([DIAKGCN_KERNNAME], ["diakgcn121016"], [Filename for diakgcn kernel])
 AC_DEFINE_UNQUOTED([DIABLO_KERNNAME], ["diablo130302"], [Filename for diablo kernel])
 AC_DEFINE_UNQUOTED([SCRYPT_KERNNAME], ["scrypt130511"], [Filename for scrypt kernel])
+AC_DEFINE_UNQUOTED([BLAKE256_KERNNAME], ["blake256"], [Filename for blake256 kernel])
 
 
 AC_SUBST(OPENCL_LIBS)
@@ -475,6 +492,11 @@ if test "x$opencl" != xno; then
 	else
 		echo "  scrypt...............: Disabled"
 	fi
+	if test "x$blake256" != xno; then
+		echo "  blake256.............: Enabled"
+	else
+		echo "  blake256.............: Disabled"
+	fi
 
 	else
 		echo "  OpenCL...............: NOT FOUND. GPU mining support DISABLED"
@@ -482,6 +504,7 @@ if test "x$opencl" != xno; then
 			AC_MSG_ERROR([No mining configured in])
 		fi
 		echo "  scrypt...............: Disabled (needs OpenCL)"
+		echo "  blake256.............: Disabled (needs OpenCL)"
 	fi
 else
 	echo "  OpenCL...............: Detection overrided. GPU mining support DISABLED"
@@ -489,6 +512,7 @@ else
 		AC_MSG_ERROR([No mining configured in])
 	fi
 	echo "  scrypt...............: Disabled (needs OpenCL)"
+	echo "  blake256.............: Disabled (needs OpenCL)"
 fi
 
 if test "x$adl" != xno; then

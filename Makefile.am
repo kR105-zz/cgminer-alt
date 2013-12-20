@@ -58,6 +58,10 @@ if HAS_SCRYPT
 cgminer_SOURCES += scrypt.c scrypt.h
 endif
 
+if HAS_BLAKE256
+cgminer_SOURCES += blake.c blake.h
+endif
+
 if NEED_FPGAUTILS
 cgminer_SOURCES += fpgautils.c fpgautils.h
 endif

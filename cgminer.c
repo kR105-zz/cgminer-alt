@@ -104,6 +104,9 @@ int gpu_threads;
 #ifdef USE_SCRYPT
 bool opt_scrypt;
 #endif
+#ifdef USE_BLAKE256
+bool opt_blake256;
+#endif
 #endif
 bool opt_restart = true;
 static bool opt_nogpu;
@@ -1104,6 +1107,11 @@ static struct opt_table opt_config_table[] = {
 		     set_shaders, NULL, NULL,
 		     "GPU shaders per card for tuning scrypt, comma separated"),
 #endif
+#ifdef USE_BLAKE256
+	OPT_WITHOUT_ARG("--blake256",
+			opt_set_bool, &opt_blake256,
+			"Use the blake256 algorithm for mining (blakecoin only)"),
+#endif
 	OPT_WITH_ARG("--sharelog",
 		     set_sharelog, NULL, NULL,
 		     "Append share log to file"),
@@ -1498,6 +1506,7 @@ static void __build_gbt_coinbase(struct pool *pool)
 }
 
 static void gen_hash(unsigned char *data, unsigned char *hash, int len);
+static void gen_hash_single(unsigned char *data, unsigned char *hash, int len);
 
 /* Process transactions with GBT by storing the binary value of the first
  * transaction, and the hashes of the remaining transactions since these
@@ -1541,7 +1550,7 @@ static bool __build_gbt_txns(struct pool *pool, json_t *res_val)
 		if (unlikely(!hex2bin(txn_bin, txn, txn_len / 2)))
 			quit(1, "Failed to hex2bin txn_bin");
 
-		gen_hash(txn_bin, pool->txn_hashes + (32 * i), txn_len / 2);
+		gen_hash_single(txn_bin, pool->txn_hashes + (32 * i), txn_len / 2);
 		free(txn_bin);
 	}
 out:
@@ -1557,7 +1566,7 @@ static unsigned char *__gbt_merkleroot(struct pool *pool)
 	if (unlikely(!merkle_hash))
 		quit(1, "Failed to calloc merkle_hash in __gbt_merkleroot");
 
-	gen_hash(pool->gbt_coinbase, merkle_hash, pool->coinbase_len);
+	gen_hash_single(pool->gbt_coinbase, merkle_hash, pool->coinbase_len);
 
 	if (pool->gbt_txns)
 		memcpy(merkle_hash + 32, pool->txn_hashes, pool->gbt_txns * 32);
@@ -2626,6 +2635,16 @@ static void calc_diff(struct work *work, int known)
 		if (unlikely(!d64))
 			d64 = 1;
 		work->work_difficulty = diffone / d64;
+	} else if (opt_blake256) {
+		uint64_t *data64, d64;
+		char rtarget[32];
+
+		swab256(rtarget, work->target);
+		data64 = (uint64_t *)(rtarget + 4);
+		d64 = be64toh(*data64);
+		if (unlikely(!d64))
+			d64 = 1;
+		work->work_difficulty = diffone / d64;
 	} else if (!known) {
 		double targ = 0;
 		int i;
@@ -3192,6 +3211,8 @@ static void rebuild_hash(struct work *work)
 {
 	if (opt_scrypt)
 		scrypt_regenhash(work);
+	else if (opt_blake256)
+		blake256_regenhash(work);
 	else
 		regen_hash(work);
 
@@ -3953,6 +3974,9 @@ void write_config(FILE *fcfg)
 					break;
 				case KL_SCRYPT:
 					fprintf(fcfg, "scrypt");
+					break;
+				case KL_BLAKE256:
+					fprintf(fcfg, "blake256");
 					break;
 			}
 		}
@@ -5276,6 +5300,11 @@ static void gen_hash(unsigned char *data, unsigned char *hash, int len)
 	sha2(hash1, 32, hash);
 }
 
+static void gen_hash_single(unsigned char *data, unsigned char *hash, int len)
+{
+	sha2(data, len, hash);
+}
+
 /* Diff 1 is a 256 bit unsigned integer of
  * 0x00000000ffff0000000000000000000000000000000000000000000000000000
  * so we use a big endian 64 bit unsigned integer centred on the 5th byte to
@@ -5349,7 +5378,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
 	hex2bin(coinbase + pool->swork.cb1_len + pool->n1_len + pool->n2size, pool->swork.coinbase2, pool->swork.cb2_len);
 
 	/* Generate merkle root */
-	gen_hash(coinbase, merkle_root, pool->swork.cb_len);
+	gen_hash_single(coinbase, merkle_root, pool->swork.cb_len);
 	free(coinbase);
 	memcpy(merkle_sha, merkle_root, 32);
 	for (i = 0; i < pool->swork.merkles; i++) {
@@ -5567,11 +5596,11 @@ static void hash_sole_work(struct thr_info *mythr)
 			break;
 		}
 		work->device_diff = MIN(drv->working_diff, work->work_difficulty);
-#ifdef USE_SCRYPT
+#ifdef USE_SCRYPT || USE_BLAKE256
 		/* Dynamically adjust the working diff even if the target
 		 * diff is very high to ensure we can still validate scrypt is
 		 * returning shares. */
-		if (opt_scrypt) {
+		if (opt_scrypt || opt_blake256) {
 			double wu;
 
 			wu = total_diff1 / total_secs * 60;
