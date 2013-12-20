@@ -73,5 +73,5 @@ __kernel void search(
 
 	if(pre7 ^ V7 ^ VF)
 		return;
-	output[output[0xFF]++] = nonce;
+	output[output[0x0F]++] = nonce;
 }

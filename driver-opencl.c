@@ -1510,7 +1510,7 @@ static bool opencl_prepare_work(struct thr_info __maybe_unused *thr, struct work
 #endif
 #ifdef USE_BLAKE256
 	if (opt_blake256) {
-		//work->blk.work = work; PICHULA
+		work->blk.work = work;
 		precalc_hash_blake256(&work->blk, 0, (uint32_t *)(work->data));
 	} else
 #endif

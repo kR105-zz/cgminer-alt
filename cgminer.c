@@ -2635,16 +2635,6 @@ static void calc_diff(struct work *work, int known)
 		if (unlikely(!d64))
 			d64 = 1;
 		work->work_difficulty = diffone / d64;
-	} else if (opt_blake256) {
-		uint64_t *data64, d64;
-		char rtarget[32];
-
-		swab256(rtarget, work->target);
-		data64 = (uint64_t *)(rtarget + 4);
-		d64 = be64toh(*data64);
-		if (unlikely(!d64))
-			d64 = 1;
-		work->work_difficulty = diffone / d64;
 	} else if (!known) {
 		double targ = 0;
 		int i;

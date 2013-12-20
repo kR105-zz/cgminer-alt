@@ -469,7 +469,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 	}
 
 	if (((clState->chosen_kernel == KL_POCLBM || clState->chosen_kernel == KL_DIABLO || clState->chosen_kernel == KL_DIAKGCN) &&
-		clState->vwidth == 1 && clState->hasOpenCL11plus) || opt_scrypt)
+		clState->vwidth == 1 && clState->hasOpenCL11plus) || opt_scrypt || opt_blake256)
 			clState->goffset = true;
 
 	if (cgpu->work_size && cgpu->work_size <= clState->max_work_size)
