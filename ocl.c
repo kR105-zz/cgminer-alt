@@ -834,16 +834,6 @@ built:
 		clState->outputBuffer = clCreateBuffer(clState->context, CL_MEM_WRITE_ONLY, SCRYPT_BUFFERSIZE, NULL, &status);
 	} else
 #endif
-#ifdef USE_BLAKE256
-	if (opt_blake256) {
-		clState->CLbuffer0 = clCreateBuffer(clState->context, CL_MEM_READ_ONLY, 128, NULL, &status);
-		if (status != CL_SUCCESS) {
-			applog(LOG_ERR, "Error %d: clCreateBuffer (CLbuffer0)", status);
-			return NULL;
-		}
-		clState->outputBuffer = clCreateBuffer(clState->context, CL_MEM_WRITE_ONLY, SCRYPT_BUFFERSIZE, NULL, &status);
-	} else
-#endif
 	clState->outputBuffer = clCreateBuffer(clState->context, CL_MEM_WRITE_ONLY, BUFFERSIZE, NULL, &status);
 	if (status != CL_SUCCESS) {
 		applog(LOG_ERR, "Error %d: clCreateBuffer (outputBuffer)", status);

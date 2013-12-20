@@ -1003,7 +1003,7 @@ typedef struct {
 	cl_uint B1addK6, PreVal0addK7, W16addK16, W17addK17;
 	cl_uint zeroA, zeroB;
 	cl_uint oneA, twoA, threeA, fourA, fiveA, sixA, sevenA;
-#ifdef USE_SCRYPT || USE_BLAKE256
+#if defined(USE_SCRYPT) || defined(USE_BLAKE256)
 	struct work *work;
 #endif
 } dev_blk_ctx;
@@ -1168,7 +1168,7 @@ struct work {
 	unsigned char	target[32];
 	unsigned char	hash[32];
 
-#ifdef USE_SCRYPT || USE_BLAKE256
+#if defined(USE_SCRYPT) || defined(USE_BLAKE256)
 	unsigned char	device_target[32];
 #endif
 	double		device_diff;

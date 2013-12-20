@@ -31,12 +31,13 @@
  * Modified for more speed by BlueDragon747 for the Blakecoin project
  */
 
+#include "blake.h"
+#include "sph_blake.h"
+
 #include <stddef.h>
 #include <string.h>
 #include <limits.h>
 #include <stdint.h>
-
-#include "blake.h"
 
 #ifdef __cplusplus
 extern "C"{

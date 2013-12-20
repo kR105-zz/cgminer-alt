@@ -5596,7 +5596,7 @@ static void hash_sole_work(struct thr_info *mythr)
 			break;
 		}
 		work->device_diff = MIN(drv->working_diff, work->work_difficulty);
-#ifdef USE_SCRYPT || USE_BLAKE256
+#if defined(USE_SCRYPT) || defined(USE_BLAKE256)
 		/* Dynamically adjust the working diff even if the target
 		 * diff is very high to ensure we can still validate scrypt is
 		 * returning shares. */

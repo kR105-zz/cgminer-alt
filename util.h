@@ -77,7 +77,7 @@ void suspend_stratum(struct pool *pool);
 void dev_error(struct cgpu_info *dev, enum dev_reason reason);
 void *realloc_strcat(char *ptr, char *s);
 void *str_text(char *ptr);
-void be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len);
+static void be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len);
 void RenameThread(const char* name);
 
 /* Align a size_t to 4 byte boundaries for fussy arches */

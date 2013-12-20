@@ -59,7 +59,7 @@ cgminer_SOURCES += scrypt.c scrypt.h
 endif
 
 if HAS_BLAKE256
-cgminer_SOURCES += blake.c blake.h
+cgminer_SOURCES += blake.c blake.h sph_blake.h sph_types.h
 endif
 
 if NEED_FPGAUTILS
